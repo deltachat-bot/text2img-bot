@@ -1,4 +1,4 @@
-![logo](https://github.com/deltachat-bot/text2img-bot/raw/main/avatar.jpeg)
+<img height="180" width="180" src="https://github.com/deltachat-bot/text2img-bot/raw/main/avatar.jpeg">
 
 # Text To Image Bot
 
