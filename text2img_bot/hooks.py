@@ -28,8 +28,8 @@ HELP = (
     "No 3rd party service is involved, only I will have access to the messages in this chat"
     " and I will delete all messages on my side after sending you the results."
 )
-text2img: Callable
-img2img: Callable
+text2img: Callable = lambda *args, **kwargs: None
+img2img: Callable = lambda *args, **kwargs: None
 
 
 @cli.on_init
