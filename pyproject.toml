@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "deltabot-cli>=5.0.0,<6.0",
-    "diffusers",
+    "diffusers[torch]",
     "transformers",
     "pillow",
 ]
