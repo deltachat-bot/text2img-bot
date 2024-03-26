@@ -3,10 +3,10 @@
 import logging
 from argparse import Namespace
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import Callable
 
 from deltabot_cli import AttrDict, Bot, BotCli, ChatType, EventType, ViewType, events
-from diffusers import StableDiffusionPipeline
+from diffusers import AutoPipelineForImage2Image, AutoPipelineForText2Image
 from PIL import Image
 from rich.logging import RichHandler
 
@@ -17,39 +17,19 @@ cli.add_generic_option(
     action="store_false",
 )
 cli.add_generic_option(
-    "--device",
-    help="set the device type (default: %(default)s)",
-    default="cpu",
-    choices=[
-        "cpu",
-        "cuda",
-        "ipu",
-        "xpu",
-        "mkldnn",
-        "opengl",
-        "opencl",
-        "ideep",
-        "hip",
-        "ve",
-        "fpga",
-        "ort",
-        "xla",
-        "lazy",
-        "vulkan",
-        "mps",
-        "meta",
-        "hpu",
-        "mtia",
-        "privateuseone",
-    ],
+    "--model",
+    help="pretrained model to use for image generation (default: %(default)s)",
+    default="prompthero/openjourney",
 )
+
 HELP = (
     "I'm a Delta Chat bot, send me a text message describing the image you want to generate."
     " It might take a while for your request to be processed, please, be patient.\n\n"
     "No 3rd party service is involved, only I will have access to the messages in this chat"
     " and I will delete all messages on my side after sending you the results."
 )
-pipe: Any = None
+text2img: Callable
+img2img: Callable
 
 
 @cli.on_init
@@ -70,9 +50,9 @@ def on_init(bot: Bot, args: Namespace) -> None:
 
 @cli.on_start
 def on_start(_bot: Bot, args: Namespace) -> None:
-    global pipe  # pylint: disable=W0603
-    pipe = StableDiffusionPipeline.from_pretrained("prompthero/openjourney")
-    pipe = pipe.to(args.device)
+    global text2img, img2img  # pylint: disable=W0603
+    text2img = AutoPipelineForText2Image.from_pretrained(args.model)
+    img2img = AutoPipelineForImage2Image.from_pretrained(args.model)
 
 
 @cli.on(events.RawEvent)
@@ -103,11 +83,9 @@ def generate_img(bot: Bot, accid: int, event: AttrDict) -> None:
                 if msg.view_type == ViewType.IMAGE:
                     image = Image.open(msg.file).convert("RGB")
                     image.thumbnail((768, 768))
+                    image = img2img(msg.text, image, safety_checker=None).images[0]
                 else:
-                    image = None
-                image = pipe(
-                    msg.text, ip_adapter_image=image, safety_checker=None
-                ).images[0]
+                    image = text2img(msg.text, safety_checker=None).images[0]
                 with NamedTemporaryFile(suffix=".png") as tfile:
                     image.save(tfile.name)
                     bot.rpc.send_msg(
