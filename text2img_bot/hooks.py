@@ -1,6 +1,5 @@
 """Event handlers and hooks."""
 
-import logging
 from argparse import Namespace
 from tempfile import NamedTemporaryFile
 from typing import Callable
@@ -34,8 +33,6 @@ img2img: Callable = lambda *args, **kwargs: None
 
 @cli.on_init
 def on_init(bot: Bot, args: Namespace) -> None:
-    level = logging.DEBUG if bot.logger.level == logging.DEBUG else logging.ERROR
-    logging.basicConfig(level=level)
     bot.logger.handlers = [
         RichHandler(show_path=False, omit_repeated_times=False, show_time=args.no_time)
     ]
