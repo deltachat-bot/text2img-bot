@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text2img-bot"
+description = "Delta Chat bot to generate images from text prompts"
+dynamic = ["version"]
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["deltachat", "bot"]
+authors = [
+  {name = "adbenitez", email = "adb@merlinux.eu"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+dependencies = [
+    "deltabot-cli>=5.0.0,<6.0",
+    "diffusers",
+    "transformers",
+    "pillow",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "mypy",
+  "isort",
+  "pylint",
+  "pylama",
+  "pytest",
+]
+
+[project.scripts]
+text2img-bot = "text2img_bot:main"
+
+[tool.setuptools_scm]
+# can be empty if no extra settings are needed, presence enables setuptools_scm
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = "True"
