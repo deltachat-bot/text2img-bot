@@ -1,7 +1,9 @@
+![logo](https://github.com/deltachat-bot/text2img-bot/raw/main/avatar.jpeg)
+
 # Text To Image Bot
 
 [![Latest Release](https://img.shields.io/pypi/v/text2img-bot.svg)](https://pypi.org/project/text2img-bot)
-[![CI](https://github.com/deltachat-bot/voice2text_deltabot/actions/workflows/python-ci.yml/badge.svg)](https://github.com/deltachat-bot/voice2text_deltabot/actions/workflows/python-ci.yml)
+[![CI](https://github.com/deltachat-bot/text2img-bot/actions/workflows/python-ci.yml/badge.svg)](https://github.com/deltachat-bot/text2img-bot/actions/workflows/python-ci.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A text-to-image generator bot for Delta Chat. Generate images from any text prompt.
