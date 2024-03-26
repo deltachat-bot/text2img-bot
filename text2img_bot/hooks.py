@@ -63,10 +63,11 @@ def on_core_event(bot: Bot, accid: int, event: AttrDict) -> None:
     elif event.kind == EventType.MSG_DELIVERED:
         bot.rpc.delete_messages(accid, [event.msg_id])
     elif event.kind == EventType.SECUREJOIN_INVITER_PROGRESS:
-        if event.progress == 1000 and not bot.rpc.get_contact(event.contact_id).is_bot:
-            bot.logger.debug("QR scanned by contact id=%s", event.contact_id)
-            chatid = bot.rpc.create_chat_by_contact_id(accid, event.contact_id)
-            bot.rpc.send_msg(accid, chatid, {"text": HELP})
+        if event.progress == 1000:
+            if not bot.rpc.get_contact(accid, event.contact_id).is_bot:
+                bot.logger.debug("QR scanned by contact id=%s", event.contact_id)
+                chatid = bot.rpc.create_chat_by_contact_id(accid, event.contact_id)
+                bot.rpc.send_msg(accid, chatid, {"text": HELP})
 
 
 @cli.on(events.NewMessage(is_bot=None))
