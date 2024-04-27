@@ -4,12 +4,25 @@ from argparse import Namespace
 from tempfile import NamedTemporaryFile
 from typing import Callable
 
-from deltabot_cli import AttrDict, Bot, BotCli, ChatType, EventType, ViewType, events
+from deltabot_cli import BotCli
+from deltachat2 import (
+    Bot,
+    ChatType,
+    CoreEvent,
+    EventType,
+    MessageViewtype,
+    MsgData,
+    NewMsgEvent,
+    events,
+)
 from diffusers import AutoPipelineForImage2Image, AutoPipelineForText2Image
 from PIL import Image
 from rich.logging import RichHandler
 
+from ._version import __version__
+
 cli = BotCli("text2img-bot")
+cli.add_generic_option("-v", "--version", action="version", version=__version__)
 cli.add_generic_option(
     "--no-time",
     help="do not display date timestamp in log messages",
@@ -41,7 +54,6 @@ def on_init(bot: Bot, args: Namespace) -> None:
             bot.rpc.set_config(accid, "displayname", "Text To Image")
             status = "I'm a Delta Chat bot, send me a message describing the image you want to generate"
             bot.rpc.set_config(accid, "selfstatus", status)
-            bot.rpc.set_config(accid, "delete_server_after", "1")
             bot.rpc.set_config(accid, "delete_device_after", str(60 * 60 * 24))
 
 
@@ -53,7 +65,7 @@ def on_start(_bot: Bot, args: Namespace) -> None:
 
 
 @cli.on(events.RawEvent)
-def on_core_event(bot: Bot, accid: int, event: AttrDict) -> None:
+def on_core_event(bot: Bot, accid: int, event: CoreEvent) -> None:
     if event.kind == EventType.INFO:
         bot.logger.debug(event.msg)
     elif event.kind == EventType.WARNING:
@@ -67,32 +79,35 @@ def on_core_event(bot: Bot, accid: int, event: AttrDict) -> None:
             if not bot.rpc.get_contact(accid, event.contact_id).is_bot:
                 bot.logger.debug("QR scanned by contact id=%s", event.contact_id)
                 chatid = bot.rpc.create_chat_by_contact_id(accid, event.contact_id)
-                bot.rpc.send_msg(accid, chatid, {"text": HELP})
+                bot.rpc.send_msg(accid, chatid, MsgData(text=HELP))
 
 
-@cli.on(events.NewMessage(is_bot=None))
-def generate_img(bot: Bot, accid: int, event: AttrDict) -> None:
+@cli.on(events.NewMessage(is_info=False))
+def generate_img(bot: Bot, accid: int, event: NewMsgEvent) -> None:
     msg = event.msg
-    if not msg.is_bot and not msg.is_info:
-        chat = bot.rpc.get_basic_chat_info(accid, msg.chat_id)
-        if chat.chat_type == ChatType.SINGLE:
-            bot.rpc.markseen_msgs(accid, [msg.id])
-            if msg.text:
-                if msg.view_type == ViewType.IMAGE:
-                    image = Image.open(msg.file).convert("RGB")
-                    image.thumbnail((768, 768))
-                    image = img2img(msg.text, image, safety_checker=None).images[0]
-                else:
-                    image = text2img(msg.text, safety_checker=None).images[0]
-                with NamedTemporaryFile(suffix=".png") as tfile:
-                    image.save(tfile.name)
-                    bot.rpc.send_msg(
-                        accid,
-                        msg.chat_id,
-                        {"file": tfile.name, "quotedMessageId": msg.id},
-                    )
+    chat = bot.rpc.get_basic_chat_info(accid, msg.chat_id)
+    if chat.chat_type == ChatType.SINGLE:
+        bot.rpc.markseen_msgs(accid, [msg.id])
+        if msg.text:
+            if msg.view_type == MessageViewtype.IMAGE:
+                image = Image.open(msg.file).convert("RGB")
+                image.thumbnail((768, 768))
+                image = img2img(msg.text, image, safety_checker=None).images[0]
             else:
+                image = text2img(msg.text, safety_checker=None).images[0]
+            with NamedTemporaryFile(suffix=".png") as tfile:
+                image.save(tfile.name)
                 bot.rpc.send_msg(
-                    accid, msg.chat_id, {"text": HELP, "quotedMessageId": msg.id}
+                    accid,
+                    msg.chat_id,
+                    MsgData(file=tfile.name, quoted_message_id=msg.id),
                 )
-    bot.rpc.delete_messages(accid, [msg.id])
+        else:
+            bot.rpc.send_msg(
+                accid, msg.chat_id, MsgData(text=HELP, quoted_message_id=msg.id)
+            )
+
+
+@cli.after(events.NewMessage)
+def delete_msgs(bot: Bot, accid: int, event: NewMsgEvent) -> None:
+    bot.rpc.delete_messages(accid, [event.msg.id])

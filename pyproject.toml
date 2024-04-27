@@ -18,11 +18,14 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
 dependencies = [
-    "deltabot-cli>=5.0.0,<6.0",
+    "deltabot-cli>=6.1.0,<7.0",
     "diffusers[torch]",
     "transformers",
     "pillow",
 ]
+
+[project.urls]
+Homepage = "https://github.com/deltachat-bot/text2img-bot"
 
 [project.optional-dependencies]
 dev = [
@@ -39,6 +42,7 @@ text2img-bot = "text2img_bot:main"
 
 [tool.setuptools_scm]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
+version_file = "text2img_bot/_version.py"
 
 [tool.isort]
 profile = "black"
