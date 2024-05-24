@@ -89,6 +89,7 @@ def generate_img(bot: Bot, accid: int, event: NewMsgEvent) -> None:
     if chat.chat_type == ChatType.SINGLE:
         bot.rpc.markseen_msgs(accid, [msg.id])
         if msg.text:
+            bot.rpc.send_reaction(accid, msg.id, ["⏳"])
             if msg.view_type == MessageViewtype.IMAGE:
                 image = Image.open(msg.file).convert("RGB")
                 image.thumbnail((768, 768))
@@ -97,6 +98,7 @@ def generate_img(bot: Bot, accid: int, event: NewMsgEvent) -> None:
                 image = text2img(msg.text, safety_checker=None).images[0]
             with NamedTemporaryFile(suffix=".png") as tfile:
                 image.save(tfile.name)
+                bot.rpc.send_reaction(accid, msg.id, [])
                 bot.rpc.send_msg(
                     accid,
                     msg.chat_id,
